@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.google.gms.google.services)
+    alias(libs.plugins.kotlin.serialization)
     id ("kotlin-kapt")
     id("com.google.dagger.hilt.android")
 }
@@ -73,7 +74,6 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    implementation(libs.androidx.material.icons.extended.android)
     implementation(libs.coil.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation (libs.androidx.lifecycle.viewmodel.ktx)
@@ -88,5 +88,9 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.coil.compose)
+
+//    implementation(libs.xchromecast.sender)
+    implementation(libs.core)
+
 
 }

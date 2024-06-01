@@ -7,7 +7,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,11 +14,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ElevatedButton
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -35,12 +34,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.LifecycleOwner
 import com.example.dolegal.R
 import com.example.dolegal.presentation.viewmodel.HomeViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginPage(context: Context, vModel: HomeViewModel) {
+fun LoginPage(
+    context: Context,
+    vModel: HomeViewModel,
+    onLoginClick: () -> Unit,
+    imInset: Int
+) {
 
     var email by rememberSaveable {
         mutableStateOf("")
@@ -51,30 +55,30 @@ fun LoginPage(context: Context, vModel: HomeViewModel) {
     }
 
 
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = if(imInset<=0)Alignment.Center else Alignment.TopCenter) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
             modifier = Modifier.verticalScroll(rememberScrollState())
         ) {
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Image(
-                    painter = painterResource(R.drawable.mylogo),
-                    contentDescription = "mylogo",
-                    modifier = Modifier
-                        .padding(14.dp)
-                        .clip(RoundedCornerShape(100.dp))
-                        .size(180.dp)
 
-                )
-            }
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Image(
+                        painter = painterResource(R.drawable.do_legal_logo_notext),
+                        contentDescription = "mylogo",
+                        modifier = Modifier
+                            .padding(14.dp)
+                            .clip(CircleShape)
+                            .size(if (imInset <= 0) 180.dp else 62.dp)
+
+                    )
+                }
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(12.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Color(0xBE737471)),
+                    .clip(RoundedCornerShape(16.dp)),
                 contentAlignment = Alignment.Center
             ) {
 
@@ -88,12 +92,14 @@ fun LoginPage(context: Context, vModel: HomeViewModel) {
                         modifier = Modifier.padding(12.dp),
                         shape = RoundedCornerShape(12.dp),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                        placeholder = { Text(text = "Enter Email") },
+                        placeholder = { Text(text = "Enter Email", color = Color.White) },
                         colors = TextFieldDefaults.colors(
-                            focusedTextColor = Color(0xFF365349),
-                            unfocusedLabelColor = Color.Unspecified,
+                            focusedContainerColor = Color(0xCD8DD7BF),
+                            unfocusedContainerColor = Color(0xCD8DD7BF),
                             focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
                         )
                     )
                     TextField(
@@ -102,34 +108,30 @@ fun LoginPage(context: Context, vModel: HomeViewModel) {
                         modifier = Modifier.padding(12.dp),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         shape = RoundedCornerShape(12.dp),
-                        placeholder = { Text(text = "Enter Password") },
-                        colors = TextFieldDefaults.textFieldColors(
-                            focusedTextColor = Color(0xFF365349),
-                            unfocusedLabelColor = Color.Unspecified,
+                        placeholder = { Text(text = "Enter Password", color = Color.White) },
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xCD8DD7BF),
+                            unfocusedContainerColor = Color(0xCD8DD7BF),
                             focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
                         )
                     )
                     Spacer(modifier = Modifier.height(12.dp))
-                    Row (horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.CenterVertically){
-                        Image(
-                            painter = painterResource(id = R.drawable.google_logo),
+
+                    Image(
+                            painter = painterResource(id = R.drawable.google),
                             contentDescription = "google_logo",
                             modifier = Modifier.size(30.dp)
-                        )
-                        Image(
-                            painter = painterResource(id = R.drawable.facebook_logo),
-                            contentDescription = "facebook_logo",
-                            modifier = Modifier.size(34.dp)
-                        )
-                    }
+                    )
 
                     Spacer(modifier = Modifier.height(12.dp))
 
                     ElevatedButton(
                             onClick = {
                                 if (email.isNotEmpty() && password.isNotEmpty()) {
-                                    vModel.login(email, password)
+                                    vModel.login(email.trim(), password.trim(),onLoginClick)
                                 } else {
                                     Toast.makeText(
                                         context,

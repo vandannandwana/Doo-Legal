@@ -2,50 +2,151 @@ package com.example.dolegal.presentation.viewmodel
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.dolegal.core.common.CurrentUserResource
+import com.example.dolegal.core.common.StoryCategoryResource
+import com.example.dolegal.core.common.StoryResource
+import com.example.dolegal.core.common.UsersResource
+import com.example.dolegal.presentation.models.Story
+import com.example.dolegal.presentation.models.StoryBanner
+import com.example.dolegal.presentation.models.Users
+import com.example.dolegal.presentation.state.CurrentUserState
+import com.example.dolegal.presentation.state.StoryCategoryState
+import com.example.dolegal.presentation.state.StoryStates
+import com.example.dolegal.presentation.state.UsersState
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.CollectionReference
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
+import javax.inject.Named
 
+@OptIn(DelicateCoroutinesApi::class)
 @HiltViewModel
-class HomeViewModel @Inject constructor(private val firestoreDatabase:CollectionReference,val auth: FirebaseAuth):ViewModel(){
+class HomeViewModel @Inject constructor(
+    @Named("users")
+    val userDatabase:CollectionReference,
+    @Named("story_category")
+    val bannerDatabase:CollectionReference,
+    @Named("stories")
+    val storyDatabase:CollectionReference,
+    private val auth: FirebaseAuth):ViewModel(){
+    init {
+
+        getAllUsers()
+        getAllBanners()
+        GlobalScope.launch {
+            if(checkUser())
+                getCurrentUser()
+        }
 
 
-    fun checkUser()= auth.currentUser != null
+    }
 
-    fun login(email: String,password: String){
+    private val _stories = MutableStateFlow(StoryStates())
+    val stories:StateFlow<StoryStates>
+        get() = _stories
 
-        auth.signInWithEmailAndPassword(email,password).addOnCompleteListener { task ->
-            if(task.isSuccessful){
+    private val _banners = MutableStateFlow(StoryCategoryState())
 
-                Log.d("Vandan_Login","Login Successfull")
+    val banners:StateFlow<StoryCategoryState>
+        get() = _banners
 
-            }else{
-                Log.d("Vandan_Login",task.exception?.localizedMessage.toString())
+    private val _users = MutableStateFlow(UsersState())
+    val users:StateFlow<UsersState>
+        get() =_users
+
+
+    private val _currentUser = MutableStateFlow(CurrentUserState())
+    val currentUser:StateFlow<CurrentUserState>
+        get() = _currentUser
+
+
+
+    private fun _getCurrentUser():Flow<CurrentUserResource<Users>> = flow{
+
+        emit(CurrentUserResource.Loading())
+        val result = userDatabase.document(auth.currentUser?.uid!!).get().await().toObject(Users::class.java)
+        if(result != null)
+        emit(CurrentUserResource.Success(result))
+    }
+
+    suspend fun getCurrentUser(){
+
+        _getCurrentUser().collect{
+
+            when(it){
+
+                is CurrentUserResource.Success -> {
+
+                    _currentUser.value = CurrentUserState().copy(user = it.user)
+
+                }
+
+                is CurrentUserResource.Error -> {
+
+                    _currentUser.value = CurrentUserState().copy(error = it.message.toString())
+
+                }
+
+                is CurrentUserResource.Loading -> {
+
+                    _currentUser.value = CurrentUserState().copy(isLoading = true)
+
+                }
+
             }
+
         }
 
     }
 
-    suspend fun addUser(name:String,email:String, password:String){
+    fun checkUser()= auth.currentUser != null
 
-        val user = hashMapOf(
-            "name" to name,
-            "email" to email,
-            "password" to password
-        )
-
-        firestoreDatabase.add(user).await()
-
+    fun logout()= auth.signOut()
+    fun login(email: String,password: String,onLogin:()->Unit){
+        auth.signInWithEmailAndPassword(email,password).addOnCompleteListener { task ->
+            if(task.isSuccessful){
+                Log.d("Vandan_Login","Login Successfull")
+                onLogin()
+                return@addOnCompleteListener
+            }else{
+                Log.d("Vandan_Login",task.exception?.localizedMessage.toString())
+                return@addOnCompleteListener
+            }
+        }
     }
-    fun signup(email: String, password: String){
-
+    @OptIn(DelicateCoroutinesApi::class)
+    fun signup(email: String, name: String, password: String, onLoginClick1: () -> Unit){
         auth.createUserWithEmailAndPassword(email,password).addOnCompleteListener{task->
 
             if(task.isSuccessful){
 
                 Log.d("Vandan_Signup","Signup Successfull")
+
+                val uid =auth.currentUser?.uid!!
+
+                val user = hashMapOf(
+                    "name" to name,
+                    "email" to email,
+                    "password" to password
+                )
+                GlobalScope.launch {
+                    userDatabase.document(uid).set(user).await()
+                }
+                login(email,password,onLoginClick1)
 
             }else{
                 Log.d("Vandan_Signup",task.exception?.localizedMessage.toString())
@@ -55,5 +156,120 @@ class HomeViewModel @Inject constructor(private val firestoreDatabase:Collection
 
     }
 
+    private fun getUsers(): Flow<UsersResource<List<Users>>> = flow{
 
+        emit(UsersResource.Loading())
+
+        val result = userDatabase.get().await().toObjects(Users::class.java)
+        emit(UsersResource.Success(result))
+
+
+    }.flowOn(Dispatchers.IO)
+        .catch {
+            emit(UsersResource.Error(it.message.toString()))
+        }
+    private fun getAllUsers(){
+
+        getUsers().onEach {
+
+            when(it){
+
+                is UsersResource.Success -> {
+
+                    _users.value =UsersState().copy(users = it.user)
+
+                }
+
+                is UsersResource.Error -> {
+
+                    _users.value = UsersState().copy(errorMessage = it.message)
+
+                }
+
+                is UsersResource.Loading -> {
+
+                    _users.value = UsersState().copy(isLoading = true)
+
+                }
+            }
+
+        }.launchIn(viewModelScope)
+
+    }
+    private fun getStories(category:String):Flow<StoryResource<List<Story>>> = flow{
+        emit(StoryResource.Loading())
+
+        val result = storyDatabase.document(category).collection(category).get().await().toObjects(Story::class.java)
+        emit(StoryResource.Success(result))
+
+    }.flowOn(Dispatchers.IO)
+        .catch {
+            emit(StoryResource.Error(it.message.toString()))
+        }
+
+    fun getAllStories(category: String){
+
+        getStories(category).onEach{
+
+            when(it){
+
+                is StoryResource.Success -> {
+
+                    _stories.value = StoryStates().copy(stories = it.story)
+                }
+
+                is StoryResource.Error -> {
+
+                    _stories.value = StoryStates().copy(errorMessage = it.message)
+                }
+
+                is StoryResource.Loading -> {
+
+                    _stories.value = StoryStates().copy(isLoading = true)
+
+                }
+
+            }
+
+        }.launchIn(viewModelScope)
+
+    }
+
+
+    private fun getBanners():Flow<StoryCategoryResource<List<StoryBanner>>> = flow{
+
+        emit(StoryCategoryResource.Loading())
+
+        val result = bannerDatabase.get().await().toObjects(StoryBanner::class.java)
+        emit(StoryCategoryResource.Success(result))
+
+
+    }.flowOn(Dispatchers.IO)
+        .catch {
+            emit(StoryCategoryResource.Error(it.message.toString()))
+        }
+   private fun getAllBanners(){
+
+        getBanners().onEach {
+            when(it){
+
+                is StoryCategoryResource.Success -> {
+
+                    _banners.value = StoryCategoryState().copy(categories = it.storyCategory)
+
+                }
+
+                is StoryCategoryResource.Error -> {
+
+                    _banners.value = StoryCategoryState().copy(errorMessage = it.message)
+                }
+
+                is StoryCategoryResource.Loading -> {
+
+                    _banners.value = StoryCategoryState().copy(isLoading = true)
+                }
+            }
+        }.launchIn(viewModelScope)
+
+    }
 }

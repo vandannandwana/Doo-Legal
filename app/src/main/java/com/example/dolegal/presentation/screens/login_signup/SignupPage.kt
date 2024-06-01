@@ -13,11 +13,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ElevatedButton
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -35,14 +35,16 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.dolegal.R
 import com.example.dolegal.presentation.viewmodel.HomeViewModel
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, DelicateCoroutinesApi::class)
 @Composable
-fun SignUpPage(context: Context, vModel: HomeViewModel, onLoginClick: () -> Unit) {
+fun SignUpPage(
+    onLoginClick1: () -> Unit,
+    context: Context,
+    vModel: HomeViewModel,
+    onLoginClick: () -> Unit,
+    imInset: Int
+) {
+
 
     var name by rememberSaveable {
         mutableStateOf("")
@@ -59,7 +61,10 @@ fun SignUpPage(context: Context, vModel: HomeViewModel, onLoginClick: () -> Unit
         mutableStateOf("")
     }
 
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = if (imInset <= 0) Alignment.Center else Alignment.TopCenter
+    ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
@@ -67,12 +72,12 @@ fun SignUpPage(context: Context, vModel: HomeViewModel, onLoginClick: () -> Unit
         ) {
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 Image(
-                    painter = painterResource(R.drawable.mylogo),
+                    painter = painterResource(R.drawable.do_legal_logo_notext),
                     contentDescription = "mylogo",
                     modifier = Modifier
                         .padding(14.dp)
-                        .clip(RoundedCornerShape(100.dp))
-                        .size(180.dp)
+                        .clip(CircleShape)
+                        .size(if (imInset <= 0) 180.dp else 62.dp)
 
                 )
             }
@@ -82,7 +87,7 @@ fun SignUpPage(context: Context, vModel: HomeViewModel, onLoginClick: () -> Unit
                     .fillMaxWidth()
                     .padding(12.dp)
                     .clip(RoundedCornerShape(16.dp))
-                    .background(Color(0xBE737471)),
+                    .background(Color(0xFF00A5E3)),
                 contentAlignment = Alignment.Center
             ) {
 
@@ -97,12 +102,14 @@ fun SignUpPage(context: Context, vModel: HomeViewModel, onLoginClick: () -> Unit
                         modifier = Modifier.padding(12.dp),
                         shape = RoundedCornerShape(12.dp),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                        placeholder = { Text(text = "Enter Name") },
-                        colors = TextFieldDefaults.textFieldColors(
-                            focusedTextColor = Color(0xFF365349),
-                            unfocusedLabelColor = Color.Unspecified,
+                        placeholder = { Text(text = "Enter Name",color = Color.White) },
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xCD8DD7BF),
+                            unfocusedContainerColor = Color(0xCD8DD7BF),
                             focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
                         )
 
                     )
@@ -112,12 +119,14 @@ fun SignUpPage(context: Context, vModel: HomeViewModel, onLoginClick: () -> Unit
                         modifier = Modifier.padding(12.dp),
                         shape = RoundedCornerShape(12.dp),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                        placeholder = { Text(text = "Enter Email") },
+                        placeholder = { Text(text = "Enter Email", color = Color.White) },
                         colors = TextFieldDefaults.colors(
-                            focusedTextColor = Color(0xFF365349),
-                            unfocusedLabelColor = Color.Unspecified,
+                            focusedContainerColor = Color(0xCD8DD7BF),
+                            unfocusedContainerColor = Color(0xCD8DD7BF),
                             focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
                         )
                     )
                     TextField(
@@ -126,12 +135,14 @@ fun SignUpPage(context: Context, vModel: HomeViewModel, onLoginClick: () -> Unit
                         modifier = Modifier.padding(12.dp),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         shape = RoundedCornerShape(12.dp),
-                        placeholder = { Text(text = "Enter Password") },
-                        colors = TextFieldDefaults.textFieldColors(
-                            focusedTextColor = Color(0xFF365349),
-                            unfocusedLabelColor = Color.Unspecified,
+                        placeholder = { Text(text = "Enter Password", color = Color.White) },
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xCD8DD7BF),
+                            unfocusedContainerColor = Color(0xCD8DD7BF),
                             focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
                         )
                     )
                     TextField(
@@ -140,12 +151,14 @@ fun SignUpPage(context: Context, vModel: HomeViewModel, onLoginClick: () -> Unit
                         modifier = Modifier.padding(12.dp),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         shape = RoundedCornerShape(12.dp),
-                        placeholder = { Text(text = "Enter Password Again") },
-                        colors = TextFieldDefaults.textFieldColors(
-                            focusedTextColor = Color(0xFF365349),
-                            unfocusedLabelColor = Color.Unspecified,
+                        placeholder = { Text(text = "Enter Password Again", color = Color.White) },
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xCD8DD7BF),
+                            unfocusedContainerColor = Color(0xCD8DD7BF),
                             focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
                         )
                     )
                     Row(
@@ -166,18 +179,22 @@ fun SignUpPage(context: Context, vModel: HomeViewModel, onLoginClick: () -> Unit
                         ElevatedButton(
                             onClick = {
 
-                                if(name.isNotEmpty() && email.isNotEmpty() && password.isNotEmpty()){
-                                    if(password == password2){
-                                        vModel.signup(email,password)
-                                        GlobalScope.launch(Dispatchers.Main) {
-                                            vModel.addUser(name,email,password)
-                                        }
-
-                                    }else{
-                                        Toast.makeText(context, "Password do not match", Toast.LENGTH_SHORT).show()
+                                if (name.isNotEmpty() && email.isNotEmpty() && password.isNotEmpty()) {
+                                    if (password == password2) {
+                                        vModel.signup(email.trim(), name.trim(), password.trim(),onLoginClick1)
+                                    } else {
+                                        Toast.makeText(
+                                            context,
+                                            "Password do not match",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
                                     }
-                                }else{
-                                    Toast.makeText(context, "Please fill all the fields", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Toast.makeText(
+                                        context,
+                                        "Please fill all the fields",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
 
                             },
