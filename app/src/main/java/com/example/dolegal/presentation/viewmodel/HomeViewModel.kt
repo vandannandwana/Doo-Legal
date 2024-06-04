@@ -1,6 +1,10 @@
 package com.example.dolegal.presentation.viewmodel
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
+import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dolegal.core.common.CurrentUserResource
@@ -10,13 +14,17 @@ import com.example.dolegal.core.common.UsersResource
 import com.example.dolegal.presentation.models.Story
 import com.example.dolegal.presentation.models.StoryBanner
 import com.example.dolegal.presentation.models.Users
+import com.example.dolegal.presentation.screens.chatScreen.ChatScreen
 import com.example.dolegal.presentation.state.CurrentUserState
 import com.example.dolegal.presentation.state.StoryCategoryState
 import com.example.dolegal.presentation.state.StoryStates
 import com.example.dolegal.presentation.state.UsersState
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.storage.FirebaseStorage
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.getstream.chat.android.client.ChatClient
+import io.getstream.chat.android.models.User
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -42,6 +50,8 @@ class HomeViewModel @Inject constructor(
     val bannerDatabase:CollectionReference,
     @Named("stories")
     val storyDatabase:CollectionReference,
+    private val storage: FirebaseStorage,
+    private val chatClient: ChatClient,
     private val auth: FirebaseAuth):ViewModel(){
     init {
 
@@ -116,20 +126,36 @@ class HomeViewModel @Inject constructor(
     fun checkUser()= auth.currentUser != null
 
     fun logout()= auth.signOut()
-    fun login(email: String,password: String,onLogin:()->Unit){
+    fun login(
+        email: String,
+        password: String,
+        onLogin: () -> Unit,
+        isLoadingChange: (Boolean) -> Unit,
+        token: String
+    ){
         auth.signInWithEmailAndPassword(email,password).addOnCompleteListener { task ->
             if(task.isSuccessful){
                 Log.d("Vandan_Login","Login Successfull")
+                isLoadingChange(false)
                 onLogin()
+//                viewModelScope.launch {
+//                    loginRegisteredUser(email,token)
+//                }
                 return@addOnCompleteListener
             }else{
+                isLoadingChange(false)
                 Log.d("Vandan_Login",task.exception?.localizedMessage.toString())
                 return@addOnCompleteListener
             }
         }
     }
     @OptIn(DelicateCoroutinesApi::class)
-    fun signup(email: String, name: String, password: String, onLoginClick1: () -> Unit){
+    fun signup(
+        email: String,
+        name: String,
+        password: String,
+        isLoadingChange: (Boolean) -> Unit
+    ){
         auth.createUserWithEmailAndPassword(email,password).addOnCompleteListener{task->
 
             if(task.isSuccessful){
@@ -146,12 +172,41 @@ class HomeViewModel @Inject constructor(
                 GlobalScope.launch {
                     userDatabase.document(uid).set(user).await()
                 }
-                login(email,password,onLoginClick1)
+                isLoadingChange(false)
+//                login(email, password, onLoginClick1, isLoadingChange,
+//                    R.string.jwt_token.toString()
+//                )
 
             }else{
+                isLoadingChange(false)
                 Log.d("Vandan_Signup",task.exception?.localizedMessage.toString())
             }
 
+        }
+
+    }
+
+    fun updateProfile(uri: Uri?, name: String?){
+
+        Log.d("Vandan_Image","$uri")
+        viewModelScope.launch {
+            if(uri != null && name != null) {
+                storage.getReference("$name/").putFile(uri).await()
+            }
+        }
+        storage.reference.child("$name")
+            .downloadUrl.addOnSuccessListener {
+                uploadAtProfile(it)
+            }
+
+
+    }
+
+    private fun uploadAtProfile(uri: Uri) {
+
+        viewModelScope.launch {
+            userDatabase.document(auth.currentUser?.uid!!).update("profile_pic",uri).await()
+            getCurrentUser()
         }
 
     }
@@ -272,4 +327,24 @@ class HomeViewModel @Inject constructor(
         }.launchIn(viewModelScope)
 
     }
+
+
+    fun loginRegisteredUser(mainActivity: Context,username:String,token:String){
+
+        val user = User(id = username, name = username)
+
+        chatClient.connectUser(user = user,token = token).enqueue{
+            if(it.isSuccess){
+                Log.d("Vandan_Login_Stream","Login Success $it")
+                val intent = Intent(mainActivity,ChatScreen::class.java)
+                startActivity(mainActivity,intent,null)
+            }else{
+                Log.d("Vandan_Login_Stream","Login Failed $it")
+            }
+        }
+
+
+    }
+
+
 }

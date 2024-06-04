@@ -33,16 +33,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.airbnb.lottie.LottieComposition
+import com.airbnb.lottie.compose.LottieAnimation
 import com.example.dolegal.R
 import com.example.dolegal.presentation.viewmodel.HomeViewModel
 
 @Composable
 fun SignUpPage(
-    onLoginClick1: () -> Unit,
     context: Context,
     vModel: HomeViewModel,
     onLoginClick: () -> Unit,
-    imInset: Int
+    imInset: Int,
+    isLoading: Boolean,
+    isLoadingChange: (Boolean) -> Unit,
+    composition: LottieComposition?
 ) {
 
 
@@ -176,34 +180,50 @@ fun SignUpPage(
                             Text(text = "Login")
 
                         }
-                        ElevatedButton(
-                            onClick = {
 
-                                if (name.isNotEmpty() && email.isNotEmpty() && password.isNotEmpty()) {
-                                    if (password == password2) {
-                                        vModel.signup(email.trim(), name.trim(), password.trim(),onLoginClick1)
+                        if (isLoading) {
+                            LottieAnimation(
+                                modifier = Modifier.size(150.dp),
+                                composition = composition, restartOnPlay = true,
+                                iterations = Integer.MAX_VALUE
+                            )
+                        }
+                        else {
+                            ElevatedButton(
+                                onClick = {
+
+                                    if (name.isNotEmpty() && email.isNotEmpty() && password.isNotEmpty()) {
+                                        if (password == password2) {
+                                            isLoadingChange(true)
+                                            vModel.signup(
+                                                email.trim(),
+                                                name.trim(),
+                                                password.trim(),
+                                                isLoadingChange
+                                            )
+                                        } else {
+                                            Toast.makeText(
+                                                context,
+                                                "Password do not match",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
                                     } else {
                                         Toast.makeText(
                                             context,
-                                            "Password do not match",
+                                            "Please fill all the fields",
                                             Toast.LENGTH_SHORT
                                         ).show()
                                     }
-                                } else {
-                                    Toast.makeText(
-                                        context,
-                                        "Please fill all the fields",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
 
-                            },
-                            modifier = Modifier.padding(12.dp)
+                                },
+                                modifier = Modifier.padding(12.dp)
 
-                        ) {
+                            ) {
 
-                            Text(text = "SignUp")
+                                Text(text = "SignUp")
 
+                            }
                         }
                     }
 

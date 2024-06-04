@@ -23,7 +23,11 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,6 +36,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.LifecycleOwner
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.example.dolegal.R
 import com.example.dolegal.presentation.viewmodel.HomeViewModel
 import com.example.dolegal.presentation.models.TabItem
@@ -47,6 +53,12 @@ fun LoginSignup(
     vModel: HomeViewModel,
     onLoginClick: () -> Unit
 ) {
+
+    var isLoading by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes (R.raw.doraemon))
 
     val logintabItems = listOf(
 
@@ -138,18 +150,23 @@ fun LoginSignup(
                     LoginPage(
                         context = context,
                         vModel = vModel,
-                        onLoginClick,
-                        imInset
+                        composition = composition,
+                        isLoading = isLoading,
+                        isLoadingChange = {isLoading = it},
+                        onLoginClick = onLoginClick,
+                        imInset = imInset
                     )
                 } else {
                     SignUpPage(
-                        onLoginClick,
                         context = context, vModel,
+                        composition = composition,
+                        isLoading = isLoading,
+                        isLoadingChange = {isLoading = it},
                         onLoginClick = {
                         scope.launch {
                             pagerState.animateScrollToPage(0, animationSpec = tween(1200))
                         }
-                    }, imInset)
+                    }, imInset =  imInset)
                 }
 
             }

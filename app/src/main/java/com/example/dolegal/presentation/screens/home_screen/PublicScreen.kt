@@ -9,21 +9,16 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,9 +26,14 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
 import com.example.dolegal.R
 import com.example.dolegal.presentation.models.Users
 import com.example.dolegal.presentation.viewmodel.HomeViewModel
@@ -46,22 +46,23 @@ fun PublicScreen(
 ) {
 
     val usersState = viewModel.users.collectAsStateWithLifecycle(lifecycleOwner).value
-
-    var usersList by remember {
-            mutableStateOf<List<Users>?>(emptyList())
-    }
-    LaunchedEffect (usersState){
-        usersList = usersState.users?.sortedBy { it.score.toInt() }?.reversed()
-    }
-
-
-
     LazyColumn(
         modifier = Modifier
+            .padding(innerPadding)
             .fillMaxSize(),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+
+        item {
+            Text(
+                text = "LeaderBoard",
+                fontWeight = FontWeight.Normal,
+                color = Color(0xE8272727),
+                fontSize = 37.sp,
+                fontFamily = FontFamily(Font(R.font.story_categoryy))
+            )
+        }
 
         item {
 
@@ -75,80 +76,118 @@ fun PublicScreen(
 
             }
 
-            if (usersState.users    ?.isNotEmpty() == true) {
+        }
 
-                LazyColumn(modifier = Modifier.height(200.dp)) {
+        if (!usersState.users.isNullOrEmpty()) {
 
-                    item {
-
-                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center){
-
-                            Row {
-
-                                Card(modifier = Modifier
-                                    .size(200.dp)
-                                    .padding(16.dp)
-                                    .clip(CircleShape)
-                                    .shadow(24.dp)){
-
-                                    Image(modifier = Modifier.size(200.dp), contentScale = ContentScale.Crop, painter = painterResource(id = R.drawable.c1), contentDescription = "pos1")
-
-                                }
-
-                                Card(modifier = Modifier
-                                    .size(200.dp)
-                                    .padding(16.dp)
-                                    .clip(CircleShape)
-                                    .shadow(24.dp)){
-
-                                    Image(modifier = Modifier.size(200.dp), contentScale = ContentScale.Crop, painter = painterResource(id = R.drawable.c2), contentDescription = "pos1")
+            if(usersState.users.size>=2){
 
 
-                                }
+            item {
 
-                            }
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
 
-                            Card(modifier = Modifier
+                    Row {
+
+                        Card(
+                            modifier = Modifier
                                 .size(200.dp)
                                 .padding(16.dp)
                                 .clip(CircleShape)
-                                .shadow(24.dp)){
+                                .shadow(24.dp)
+                        ) {
 
-                                Image(modifier = Modifier.size(200.dp), contentScale = ContentScale.Crop, painter = painterResource(id = R.drawable.c3), contentDescription = "pos1")
+                            AsyncImage(
+                                placeholder = painterResource(id = R.drawable.loading_placeholder),
+                                modifier = Modifier.size(200.dp),
+                                contentScale = ContentScale.Crop,
+                                model = usersState.users.sortedByDescending { it.score.toInt() }[usersState.users.size -2].profile_pic,
+                                contentDescription = "pos1"
+                            )
 
-
-                            }
                         }
-                    }
-                    item {
-                        Box(modifier = Modifier.fillMaxWidth()){
-                            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceEvenly){
 
-                                Image(painter = painterResource(id = R.drawable.second), contentDescription ="first", modifier = Modifier.size(54.dp))
-                                Image(painter = painterResource(id = R.drawable.first), contentDescription ="first", modifier = Modifier.size(54.dp))
-                                Image(painter = painterResource(id = R.drawable.third), contentDescription ="first", modifier = Modifier.size(54.dp))
+                        Card(
+                            modifier = Modifier
+                                .size(200.dp)
+                                .padding(16.dp)
+                                .clip(CircleShape)
+                                .shadow(24.dp)
+                        ) {
 
-                            }
+                            AsyncImage(
+                                placeholder = painterResource(id = R.drawable.loading_placeholder),
+                                modifier = Modifier.size(200.dp),
+                                contentScale = ContentScale.Crop,
+                                model = usersState.users.sortedByDescending { it.score.toInt() }[usersState.users.size -1].profile_pic,
+                                contentDescription = "pos1"
+                            )
+
+
                         }
+
                     }
 
-                    items(usersList!!.size) { index ->
+                    Card(
+                        modifier = Modifier
+                            .size(200.dp)
+                            .padding(16.dp)
+                            .clip(CircleShape)
+                            .shadow(24.dp)
+                    ) {
 
-                        Leaderboard(usersList!![index])
+                        AsyncImage(
+                            placeholder = painterResource(id = R.drawable.loading_placeholder),
+                            modifier = Modifier.size(200.dp),
+                            contentScale = ContentScale.Crop,
+                            model = usersState.users.sortedByDescending { it.score.toInt() }[usersState.users.size -3].profile_pic,
+                            contentDescription = "pos1"
+                        )
+
 
                     }
                 }
+            }
+                }
+            item {
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
 
+                        Image(
+                            painter = painterResource(id = R.drawable.second),
+                            contentDescription = "first",
+                            modifier = Modifier.size(54.dp)
+                        )
+                        Image(
+                            painter = painterResource(id = R.drawable.first),
+                            contentDescription = "first",
+                            modifier = Modifier.size(54.dp)
+                        )
+                        Image(
+                            painter = painterResource(id = R.drawable.third),
+                            contentDescription = "first",
+                            modifier = Modifier.size(54.dp)
+                        )
+
+                    }
+                }
             }
 
 
+
+            items(usersState.users.sortedByDescending { it.score.toInt() }) { user ->
+                Leaderboard(user = user)
+            }
         }
 
 
     }
 
 }
-
 
 
 @Composable
@@ -159,22 +198,35 @@ fun Leaderboard(user: Users) {
         verticalArrangement = Arrangement.Top
     ) {
 
-        Box(modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-            .clip(RoundedCornerShape(7.dp))
-            .background(Color(0xB942665A)), contentAlignment = Alignment.Center){
-
-            Row(modifier = Modifier
+        Box(
+            modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp), horizontalArrangement = Arrangement.SpaceAround, verticalAlignment = Alignment.CenterVertically){
+                .padding(16.dp)
+                .clip(RoundedCornerShape(7.dp))
+                .background(Color(0xB942665A)), contentAlignment = Alignment.Center
+        ) {
 
-                Image(painter = painterResource(R.drawable.c4), contentScale = ContentScale.Crop, modifier = Modifier
-                    .size(34.dp)
-                    .clip(CircleShape), contentDescription = "")
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                AsyncImage(
+                    placeholder = painterResource(id = R.drawable.loading_placeholder),
+                    model = user.profile_pic,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .size(34.dp)
+                        .clip(CircleShape),
+                    contentDescription = ""
+                )
 
                 Text(text = user.name)
-                Text(text = user.score)
+                Text(text = user.score, modifier = Modifier.padding(8.dp))
 
             }
 

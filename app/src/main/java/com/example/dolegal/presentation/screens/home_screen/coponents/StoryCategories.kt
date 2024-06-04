@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -72,6 +73,7 @@ fun StoryCategoryItem(item: StoryCategory, onCategoryClick: (category: String) -
     ) {
 
         AsyncImage(
+            placeholder = painterResource(id = R.drawable.loading_placeholder),
             modifier = Modifier.size(190.dp),
             contentScale = ContentScale.Crop,
             model = item.image_url,

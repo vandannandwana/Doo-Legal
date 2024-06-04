@@ -31,9 +31,10 @@ data class StoryBanner(
 
     val name:String,
     val image_url:String,
+    val story_url:String,
 
 ){
-    constructor():this("","")
+    constructor():this("","","")
 }
 
 data class StoryCategory(

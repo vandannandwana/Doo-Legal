@@ -1,9 +1,13 @@
 package com.example.dolegal.presentation.screens.home_screen
 
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Context
+import android.content.pm.ActivityInfo
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,12 +50,15 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.example.dolegal.R
 import com.example.dolegal.presentation.models.BottomNavigationItems
+import com.example.dolegal.presentation.models.StoryBanner
 import com.example.dolegal.presentation.screens.home_screen.coponents.StoryCategories
+import com.example.dolegal.presentation.state.CurrentUserState
 import com.example.dolegal.presentation.state.StoryCategoryState
 import com.example.dolegal.presentation.viewmodel.HomeViewModel
 
@@ -61,9 +68,11 @@ import com.example.dolegal.presentation.viewmodel.HomeViewModel
 fun MainScreen(
     innerPadding: PaddingValues = PaddingValues(16.dp),
     viewModel: HomeViewModel,
+    context: Context,
     onLogoutClick: () -> Unit,
     lifecycleOwner: LifecycleOwner,
-    onCategoryClick: (category: String) -> Unit
+    onCategoryClick: (category: String) -> Unit,
+    onStoryClick: (String) -> Unit
 ) {
     var selectedItemIndex by remember {
         mutableIntStateOf(0)
@@ -71,6 +80,8 @@ fun MainScreen(
     val pagerState = rememberPagerState {
         3
     }
+
+    val currentUserState = viewModel.currentUser.collectAsStateWithLifecycle(lifecycleOwner).value
 
     LaunchedEffect(selectedItemIndex) {
         pagerState.scrollToPage(selectedItemIndex)
@@ -81,6 +92,8 @@ fun MainScreen(
         }
     }
 
+    (context as Activity).requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+
     Scaffold(
         bottomBar = {
             BottomNavigation(onClick = { selectedItemIndex = it }, pagerState.currentPage)
@@ -88,7 +101,7 @@ fun MainScreen(
     ) {
         Column(
             modifier = Modifier
-                .padding(it)
+                .padding(bottom = it.calculateBottomPadding())
                 .background(Color(0xFF00A5E3)),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -97,13 +110,25 @@ fun MainScreen(
             HorizontalPager(state = pagerState) { index ->
                 when (index) {
 
-                    1 -> PublicScreen(innerPadding = it, viewModel, lifecycleOwner)
-                    2 -> ProfileScreen(innerpadding = it, viewModel, onLogoutClick)
+                    1 -> PublicScreen(
+                        innerPadding = it,
+                        viewModel,
+                        lifecycleOwner,
+
+                    )
+                    2 -> ProfileScreen(
+                        innerpadding = it,
+                        viewModel,
+                        onLogoutClick,
+                        currentUserState
+                    )
                     else -> HomeScreen(
+                        currentUserState,
                         lifecycleOwner,
                         innerPadding,
                         viewModel,
-                        onCategoryClick
+                        onCategoryClick,
+                        onStoryClick
                     )
 
                 }
@@ -116,14 +141,16 @@ fun MainScreen(
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun HomeScreen(
+    currentUserState: CurrentUserState,
     lifecycleOwner: LifecycleOwner,
     innerPadding: PaddingValues = PaddingValues(16.dp),
     viewModel: HomeViewModel,
-    onCategoryClick: (category: String) -> Unit
+    onCategoryClick: (category: String) -> Unit,
+    onStoryClick: (String) -> Unit
 ) {
     val storyBanners = viewModel.banners.collectAsStateWithLifecycle(lifecycleOwner).value
 
-    val currentUserState = viewModel.currentUser.collectAsStateWithLifecycle(lifecycleOwner).value
+
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -169,11 +196,13 @@ fun HomeScreen(
 
 
                     AsyncImage(
+                        placeholder = painterResource(id = R.drawable.loading_placeholder),
                         model = currentUserState.user.profile_pic,
                         contentDescription = "myLogo",
+                        contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .padding(14.dp)
-                            .clip(RoundedCornerShape(100.dp))
+                            .clip(CircleShape)
                             .size(64.dp)
                     )
                 }
@@ -183,8 +212,34 @@ fun HomeScreen(
         }
 
         item {
-            BannerList(storyBanners)
+            Text(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 8.dp),
+                text = "Today's Top Stories",
+                fontWeight = FontWeight.ExtraBold,
+                color = Color(0xE8272727),
+                fontSize = 37.sp,
+                fontFamily = FontFamily(Font(R.font.story_category))
+            )
+        }
 
+        item {
+            BannerList(storyBanners,onStoryClick)
+
+        }
+
+        item {
+            Text(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 8.dp),
+                text = "Stories Categories",
+                fontWeight = FontWeight.ExtraBold,
+                color = Color(0xE8272727),
+                fontSize = 37.sp,
+                fontFamily = FontFamily(Font(R.font.story_category))
+            )
         }
 
         item {
@@ -198,7 +253,7 @@ fun HomeScreen(
 }
 
 @Composable
-fun BannerList(storyCategories: StoryCategoryState) {
+fun BannerList(storyCategories: StoryCategoryState, onStoryClick: (String) -> Unit) {
 
     if (storyCategories.isLoading) {
         CircularProgressIndicator()
@@ -209,7 +264,7 @@ fun BannerList(storyCategories: StoryCategoryState) {
         LazyRow {
             items(storyCategories.categories) { item ->
 
-                Banner(url = item.image_url)
+                Banner(item,onStoryClick)
 
             }
         }
@@ -220,7 +275,7 @@ fun BannerList(storyCategories: StoryCategoryState) {
 }
 
 @Composable
-fun Banner(url: String) {
+fun Banner(banner: StoryBanner, onStoryClick: (String) -> Unit) {
     Box(
         modifier = Modifier
             .padding(24.dp)
@@ -229,10 +284,15 @@ fun Banner(url: String) {
             .clip(RoundedCornerShape(20.dp))
     ) {
         AsyncImage(
-            model = url,
+            placeholder = painterResource(id = R.drawable.loading_placeholder),
+            model =banner.image_url,
             contentScale = ContentScale.Crop,
             contentDescription = null,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable {
+                    onStoryClick(banner.story_url)
+                }
         )
     }
 }
@@ -258,7 +318,9 @@ fun BottomNavigation(onClick: (index: Int) -> Unit, pagerState: Int) {
         )
     )
 
-    NavigationBar(containerColor = Color(0xB942665A)) {
+    NavigationBar(
+        containerColor = Color(0xB942665A)
+    ) {
         navigationItems.forEachIndexed { index, item ->
 
             NavigationBarItem(

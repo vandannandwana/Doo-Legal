@@ -60,11 +60,13 @@ fun Navigation(
                 viewModel = userViewModel,
                 lifecycleOwner = lifecycleOwner,
                 innerPadding = innerpadding,
+                context = context,
                 onLogoutClick = { navigationController.navigate(NavScreens.LoginScreen.route) },
                 onCategoryClick = {category->
                     navigationController.navigate(NavScreens.StoryScreen.route+"/${category}")
                     userViewModel.getAllStories(category)
-                }
+                },
+                onStoryClick = {navigationController.navigate(NavScreens.StoryPLayerScreen.route+"/${it}")}
             )
 
 

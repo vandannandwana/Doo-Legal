@@ -3,7 +3,6 @@ package com.example.dolegal.presentation.screens.login_signup
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,7 +33,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.LifecycleOwner
+import com.airbnb.lottie.LottieComposition
+import com.airbnb.lottie.compose.LottieAnimation
 import com.example.dolegal.R
 import com.example.dolegal.presentation.viewmodel.HomeViewModel
 
@@ -43,7 +43,10 @@ fun LoginPage(
     context: Context,
     vModel: HomeViewModel,
     onLoginClick: () -> Unit,
-    imInset: Int
+    isLoading: Boolean,
+    isLoadingChange: (Boolean) -> Unit,
+    imInset: Int,
+    composition: LottieComposition?
 ) {
 
     var email by rememberSaveable {
@@ -55,24 +58,27 @@ fun LoginPage(
     }
 
 
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = if(imInset<=0)Alignment.Center else Alignment.TopCenter) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = if (imInset <= 0) Alignment.Center else Alignment.TopCenter
+    ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
             modifier = Modifier.verticalScroll(rememberScrollState())
         ) {
 
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Image(
-                        painter = painterResource(R.drawable.do_legal_logo_notext),
-                        contentDescription = "mylogo",
-                        modifier = Modifier
-                            .padding(14.dp)
-                            .clip(CircleShape)
-                            .size(if (imInset <= 0) 180.dp else 62.dp)
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Image(
+                    painter = painterResource(R.drawable.do_legal_logo_notext),
+                    contentDescription = "mylogo",
+                    modifier = Modifier
+                        .padding(14.dp)
+                        .clip(CircleShape)
+                        .size(if (imInset <= 0) 180.dp else 62.dp)
 
-                    )
-                }
+                )
+            }
 
             Box(
                 modifier = Modifier
@@ -121,17 +127,33 @@ fun LoginPage(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Image(
-                            painter = painterResource(id = R.drawable.google),
-                            contentDescription = "google_logo",
-                            modifier = Modifier.size(30.dp)
+                        painter = painterResource(id = R.drawable.google),
+                        contentDescription = "google_logo",
+                        modifier = Modifier.size(30.dp)
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    ElevatedButton(
+                    if (isLoading) {
+                        LottieAnimation(
+                            modifier = Modifier.size(190.dp),
+                            composition = composition, restartOnPlay = true,
+                            iterations = Integer.MAX_VALUE
+                        )
+                    }
+                    else {
+                        ElevatedButton(
                             onClick = {
                                 if (email.isNotEmpty() && password.isNotEmpty()) {
-                                    vModel.login(email.trim(), password.trim(),onLoginClick)
+                                    isLoadingChange(true)
+
+                                    val token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoidmFuZGFuamkifQ.8wBs4Ls3C8GiWbhoAYUv-3Tj8tA8BeTUKbXUf4LCcZY"
+
+//                                    vModel.loginRegisteredUser(context,email,token)
+
+                                    vModel.login(email.trim(), password.trim(), onLoginClick,
+                                        isLoadingChange = isLoadingChange,
+                                        token = R.string.jwt_token.toString())
                                 } else {
                                     Toast.makeText(
                                         context,
@@ -148,6 +170,7 @@ fun LoginPage(
                             Text(text = "Login")
 
                         }
+                    }
 
                 }
 
